@@ -251,6 +251,8 @@ class Creature : public Renderable, public UniqueEntity<Creature>, public OwnedO
   void setController(PController);
   void popController();
 
+  bool canCastSpell(const Spell* spell, Position target, string* reason = nullptr ) const;
+  void instaCastSpell(const Spell*, bool addMessage = true, bool useCooldown = true);
   CreatureAction castSpell(const Spell*) const;
   CreatureAction castSpell(const Spell*, Position) const;
   TimeInterval getSpellDelay(const Spell*) const;

@@ -168,11 +168,44 @@ CreatureAttributes& Creature::getAttributes() {
   return *attributes;
 }
 
+bool Creature::canCastSpell(const Spell* spell, Position target) const {
+  auto setReason = [reason] (string s) {
+    if (reason)
+      *reason = std::move(s);
+  };
+  if (isAffected(LastingEffect::MAGIC_CANCELLATION))
+    setReason(false);
+    return CreatureAction("You can't cast spells while under the effect of "
+        + LastingEffects::getName(LastingEffect::MAGIC_CANCELLATION) + ".");
+  if (!isReady(spell)) {
+    setReason("You can't cast this spell yet.");
+    return false;
+  }
+  if (target == position && !spell->canTargetSelf()) {
+    setReason("You can't cast this spell at yourself.");
+    return false;
+  }
+  return true;
+}
+
+void Creature::instaCastSpell(const Spell* spell, bool addMessage, bool useCooldown) {
+  if (auto sound = spell->getSound())
+    addSound(*sound);
+  spell->addMessage(this);
+  if (addMessage) {
+    spell->apply(this, target);
+  }
+  if (useCooldown) {
+    spellMap->setReadyTime(this, spell, *getGlobalTime() + TimeInterval(spell->getCooldown()));
+  }
+}
+
 CreatureAction Creature::castSpell(const Spell* spell) const {
   return castSpell(spell, position);
 }
 
 CreatureAction Creature::castSpell(const Spell* spell, Position target) const {
+  string reason;
   if (isAffected(LastingEffect::MAGIC_CANCELLATION))
     return CreatureAction("You can't cast spells while under the effect of "
         + LastingEffects::getName(LastingEffect::MAGIC_CANCELLATION) + ".");
@@ -181,12 +214,8 @@ CreatureAction Creature::castSpell(const Spell* spell, Position target) const {
   if (target == position && !spell->canTargetSelf())
     return CreatureAction("You can't cast this spell at yourself.");
   return CreatureAction(this, [=] (Creature* c) {
-    if (auto sound = spell->getSound())
-      c->addSound(*sound);
-    spell->addMessage(c);
-    spell->apply(c, target);
-    getGame()->getStatistics().add(StatId::SPELL_CAST);
-    c->spellMap->setReadyTime(c, spell, *getGlobalTime() + TimeInterval(spell->getCooldown()));
+    c->instaCastSpell(spell, true, true);
+    c->getGame()->getStatistics().add(StatId::SPELL_CAST);
     c->spendTime();
   });
 }

@@ -326,6 +326,13 @@ struct AITargetEnemy {
   HeapAllocated<Effect> SERIAL(effect);
   SERIALIZE_ALL(effect)
 };
+// Casts a spell either from caster, or from target square.
+struct Spell {
+  EFFECT_TYPE_INTERFACE;
+  SpellId SERIAL(spell);
+  bool SERIAL(fromCaster) = true;
+  SERIALIZE_ALL(spell)
+};
 
 #define EFFECT_TYPES_LIST\
   X(Escape, 0)\
@@ -395,6 +402,7 @@ struct AITargetEnemy {
   X(IncreaseSkill, 64)\
   X(IncreaseWorkshopSkill, 65)\
   X(FilterLasting, 66)\
+  X(Spell, 67)\
 
 #define VARIANT_TYPES_LIST EFFECT_TYPES_LIST
 #define VARIANT_NAME EffectType

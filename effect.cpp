@@ -1343,6 +1343,18 @@ string Effects::AITargetEnemy::getDescription(const ContentFactory* f) const {
   return effect->getDescription(f);
 }
 
+bool Effects::Spell::applyToCreature(Creature* c, Creature* attacker) const {
+  return false;
+}
+
+string Effects::Spell::getName(const ContentFactory* f) const {
+  return "cast " + f->getCreatures().getSpell(spell)->getName();
+}
+
+string Effects::Spell::getDescription(const ContentFactory* f) const {
+  return "casts " + f->getCreatures().getSpell(spell)->getName();
+}
+
 #define FORWARD_CALL(RetType, Var, Name, ...)\
 Var->visit<RetType>([&](const auto& e) { return e.Name(__VA_ARGS__); })
 
@@ -1643,7 +1655,10 @@ bool Effect::apply(Position pos, Creature* attacker) const {
         }
         pos.globalMessage("Nothing happens");
         return false;
-      }
+      },
+      [&](const Effects::Spell& e) {
+        pos->getGame()->getContentFactory()-getCreatures()->getSpell(e.spell);
+      },
   );
 }
 
